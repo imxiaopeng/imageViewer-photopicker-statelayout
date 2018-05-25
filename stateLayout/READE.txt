@@ -1,0 +1,7 @@
+多布局切换框架，用于良好的用户提示。
+stateLayout使用：
+    stateLayout.showLoadingView();//显示加载中布局
+    stateLayout.showErrorView();//显示加载错误布局
+    stateLayout.showEmptyView();//显示空页面布局
+    stateLayout.showContentView();//显示内容布局
+    stateLayout.setRefreshListener(OnViewRefreshListener listener);//设置点击刷新监听

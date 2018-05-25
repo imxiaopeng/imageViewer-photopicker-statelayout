@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="layout_margin">15dp</dimen>
+
+    <dimen name="text_tip">16sp</dimen>
+
+    <dimen name="retry_tip">14sp</dimen>
+
+</resources>
