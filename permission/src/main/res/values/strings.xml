@@ -1,0 +1,7 @@
+<resources>
+    <string name="message_permission_always_failed">您拒绝了一些重要权限，请至设置中打开:\n\n%1$s</string>
+    <string name="message_permission_rationale">请授权以下权限:\n\n%1$s</string>
+    <string name="title_dialog">提示</string>
+    <string name="yes">好的</string>
+    <string name="no">还是算了</string>
+</resources>
