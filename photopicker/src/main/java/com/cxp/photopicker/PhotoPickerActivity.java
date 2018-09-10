@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.FileProvider;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -34,16 +33,13 @@ import com.cxp.photopicker.adapters.FolderAdapter;
 import com.cxp.photopicker.adapters.PhotoAdapter;
 import com.cxp.photopicker.beans.Photo;
 import com.cxp.photopicker.beans.PhotoFolder;
-import com.cxp.photopicker.utils.BitmapUtils;
 import com.cxp.photopicker.utils.LogUtils;
 import com.cxp.photopicker.utils.OtherUtils;
 import com.cxp.photopicker.utils.PhotoUtils;
 import com.cxp.photopicker.utils.PictureUtils;
 
 import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -235,6 +231,7 @@ public class PhotoPickerActivity extends Activity implements PhotoAdapter.PhotoC
         }
         String path = photo.getPath();
         if(mSelectMode == MODE_SINGLE) {
+            mSelectList.clear();
             mSelectList.add(path);
             returnData();
         }
@@ -260,20 +257,16 @@ public class PhotoPickerActivity extends Activity implements PhotoAdapter.PhotoC
     private void returnData() {
         // 返回已选择的图片数据
         if(mSelectMode==PhotoPickerActivity.MODE_SINGLE ){
-            Uri outUri = Uri.fromFile(realPath);
+//            Uri outUri = Uri.fromFile(realPath);
             String imgPath=mSelectList.get(0);
             if(needCut){
-                HashMap<Intent, File> map = PictureUtils.getCropIntent(this, outUri, imgPath, 106, 106);
-                Set<Intent> keySet = map.keySet();
-                outPutFile = null;
-                Intent cropIntent = null;
-                for (Intent intent : keySet) {
-                    if (intent != null) {
-                        cropIntent = intent;
-                        outPutFile = map.get(intent);
-                        startActivityForResult(cropIntent,REQUEST_CUT);
+                PictureUtils.getCropIntent(this, imgPath, new PictureUtils.OnGetCropIntentListener() {
+                    @Override
+                    public void onGetCropIntent(File file, Intent intent) {
+                        outPutFile = file;
+                        startActivityForResult(intent, REQUEST_CUT);
                     }
-                }
+                });
             }else{
                 Intent data = new Intent();
                 data.putExtra(KEY_RESULT, imgPath);
@@ -470,28 +463,11 @@ public class PhotoPickerActivity extends Activity implements PhotoAdapter.PhotoC
         }else if(requestCode == REQUEST_CUT){
             if(resultCode == Activity.RESULT_OK) {
                 Uri outPath = data.getData();
-                if (outPath == null) {
-                    try {
-                        outPath = Uri.parse(data.getAction());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                if (outPutFile != null && outPutFile.exists()) {
+                    String imgPath = outPutFile.getAbsolutePath();
+                    data.putExtra(KEY_RESULT, imgPath);
+                    setResult(RESULT_OK, data);
                 }
-                String imgPath=null;
-                if (outPath != null) {
-                    List<String> pathSegments = outPath.getPathSegments();
-                    if (pathSegments != null && pathSegments.size() > 0) {
-                        String fileName = pathSegments.get(pathSegments.size() - 1);
-                        realPath = new File(dir, fileName);
-                    }
-                }
-                if (realPath.exists()) {
-                    imgPath=realPath.getAbsolutePath();
-                } else if (outPutFile != null && outPutFile.exists()) {
-                    imgPath=outPutFile.getAbsolutePath();
-                }
-                data.putExtra(KEY_RESULT, imgPath);
-                setResult(RESULT_OK, data);
                 finish();
             }
         }
