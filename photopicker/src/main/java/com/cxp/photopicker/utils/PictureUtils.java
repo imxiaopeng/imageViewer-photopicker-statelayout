@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -39,7 +38,7 @@ public class PictureUtils {
 
     private static final String PHOTO_DATE_FORMAT = "'IMG'_yyyyMMdd_HHmmss";
     public static final String FILE_PROVIDER_AUTHORITY = "com.cxp.photopicker";
-    public static String authority = "com.s47gw.babbitt_photoPicker";
+    public static String authority = "com.qianyi.qianyou_photoPicker";
 
     public static Uri generateTempCroppedImageUri(Context context) {
         return FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY,
@@ -274,14 +273,10 @@ public class PictureUtils {
     }
 
     /**
-     * @param outUri
      * @param inputPath //要剪切图片的地址
-     * @param scaleX    //剪切X方向大小
-     * @param scaleY    //剪切Y方向大小
      * @return
      */
-    public static HashMap<Intent,File> getCropIntent(Activity context, Uri outUri, String inputPath, int scaleX, int scaleY) {
-        HashMap<Intent,File> map=new HashMap<>();
+    public static void getCropIntent(Activity context/*, Uri outUri*/, String inputPath, OnGetCropIntentListener listener) {
         // 如果使用com.android.camera.action.CROP 则直接打开裁剪照片的activity 那么可以用自己的图片浏览器选择图片 传入参数并使用之
         Intent intent = new Intent("com.android.camera.action.CROP");
         // 如果不设置type，则 ACTION_GET_CONTENT 会弹出异常FATAL EXCEPTION:main android.content.ActivityNotFoundException
@@ -290,6 +285,7 @@ public class PictureUtils {
             //  大于等于24即为7.0及以上执行内容
             Uri inputUri = FileProvider.getUriForFile(context, authority, new File(inputPath));
             intent.setDataAndType(inputUri, "image/*");
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         }else {
             intent.setDataAndType(Uri.fromFile(new File(inputPath)), "image/*");
         }
@@ -299,8 +295,8 @@ public class PictureUtils {
         // 这段注释掉就不会跳转到裁剪的activity
         intent.putExtra("crop", "true");
         // 设置x,y的比例，截图方框就按照这个比例来截 若设置为0,0，或者不设置 则自由比例截图(x,y不能一样长,适配华为部分机型)
-        intent.putExtra("aspectX", scaleX-1);
-        intent.putExtra("aspectY", scaleY);
+        intent.putExtra("aspectX", 1);
+        intent.putExtra("aspectY", 1);
         // 裁剪区的宽和高 其实就是裁剪后的显示区域 若裁剪的比例不是显示的比例，则自动压缩图片填满显示区域。若设置为0,0 就不显示。若不设置，则按原始大小显示
        /* intent.putExtra("outputX", scaleX);
         intent.putExtra("outputY",scaleY);*/
@@ -308,7 +304,7 @@ public class PictureUtils {
         intent.putExtra("scale", false);
         // true的话直接返回bitmap，可能会很占内存 不建议
         intent.putExtra("return-data", false);
-        File file = new File(Environment.getExternalStorageDirectory(), "/babbitt/" + System.currentTimeMillis() + ".png");
+        File file = new File(Environment.getExternalStorageDirectory(), System.currentTimeMillis() + ".png");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             //  大于等于24即为7.0及以上执行内容
             Uri uri = FileProvider.getUriForFile(context, authority, file);
@@ -322,18 +318,20 @@ public class PictureUtils {
         } else {
             //  低于24即为7.0以下执行内容
             // 上面设为false的时候将MediaStore.EXTRA_OUTPUT即"output"关联一个Uri
-            intent.putExtra("output", outUri);
+            intent.putExtra("output", Uri.fromFile(file));
         }
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
-                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         // 看参数即可知道是输出格式
         intent.putExtra("outputFormat", Bitmap.CompressFormat.PNG.toString());
         // 面部识别 这里用不上
         intent.putExtra("noFaceDetection", false);
-        map.put(intent,file);
-        return map;
+        if (listener != null) {
+            listener.onGetCropIntent(file, intent);
+        }
     }
 
+    public interface OnGetCropIntentListener {
+        void onGetCropIntent(File file, Intent intent);
+    }
     /*
  * 强制压缩图片到固定大小(不超过30kb)
  * */
